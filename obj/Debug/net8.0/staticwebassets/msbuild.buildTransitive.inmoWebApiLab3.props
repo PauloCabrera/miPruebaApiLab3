@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\inmoWebApiLab3.props" />
+</Project>
