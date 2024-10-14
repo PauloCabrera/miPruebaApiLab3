@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace inmoWebApiLab3.Controllers.API  // Asegúrate que el namespace coincida con el del proyecto
 {
@@ -16,7 +16,6 @@ namespace inmoWebApiLab3.Controllers.API  // Asegúrate que el namespace coincid
    [Route("api/[controller]")]
 	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	[ApiController]
-
     
     public class PropietariosController : ControllerBase
     {
@@ -164,35 +163,37 @@ public async Task<IActionResult> Login([FromBody] LoginView loginView)
             numBytesRequested: 256 / 8));
 
         // Busca al propietario en la base de datos
+        Console.WriteLine(hashed+ " es iguyal " + "3A0G2+zJ3luLnlC44+Xe5HGw/9RWJNoyF2XZACvev20=");
         var propietario = await _context.Propietario.FirstOrDefaultAsync(x => x.Email == loginView.Usuario);
         if (propietario == null || propietario.Clave != hashed)
         {
             return BadRequest("Nombre de usuario o clave incorrecta");
-        }
-
-        // Genera el token JWT
-        var key = new SymmetricSecurityKey(System.Text.Encoding.ASCII.GetBytes(config["TokenAuthentication:SecretKey"]));
-        var credenciales = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var claims = new List<Claim>
+        } else 
         {
-            new Claim(ClaimTypes.Name, propietario.Email),
-            new Claim("FullName", propietario.Nombre + " " + propietario.Apellido),
-            new Claim(ClaimTypes.Role, "Propietario"),
-        };
+            // Genera el token JWT
+            var key = new SymmetricSecurityKey(System.Text.Encoding.ASCII.GetBytes(config["TokenAuthentication:SecretKey"]));
+            var credenciales = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, propietario.Email),
+                new Claim("FullName", propietario.Nombre + " " + propietario.Apellido),
+                new Claim(ClaimTypes.Role, "Propietario"),
+            };
 
-        var token = new JwtSecurityToken(
-            issuer: config["TokenAuthentication:Issuer"],
-            audience: config["TokenAuthentication:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(60),
-            signingCredentials: credenciales
-        );
+            var token = new JwtSecurityToken(
+                issuer: config["TokenAuthentication:Issuer"],
+                audience: config["TokenAuthentication:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(60),
+                signingCredentials: credenciales
+            );
 
-        // Registra el token generado
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-        Console.WriteLine("Token generado: " + tokenString); // Agrega esta línea para depurar
+            // Registra el token generado
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            Console.WriteLine("Token generado: " + tokenString); // Agrega esta línea para depurar
 
-        return Ok(new { Token = tokenString });
+            return Ok(new { Token = tokenString });
+        }
     }
     catch (Exception ex)
     {
